@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Dict, Optional, Union
 
+from hydra.core.config_store import ConfigStore
+
 
 @dataclass(kw_only=True)
 class FileSystemConfig:
@@ -30,6 +32,11 @@ class S3FileSystemConfig(FileSystemConfig):
     scheme: str = "https"
     endpoint_override: Optional[str] = None
     background_writes: bool = True
-    proxy_options: Optional[Union[str, Dict]] = None
+    proxy_options: Optional[str] = None
     allow_bucket_creation: bool = False
     allow_bucket_deletion: bool = False
+
+
+cs = ConfigStore.instance()
+cs.store(group="filesystem", name="Local", node=LocalFileSystemConfig)
+cs.store(group="filesystem", name="S3", node=S3FileSystemConfig)

@@ -27,9 +27,8 @@ class CIFAR10Prepare(Prepare):
 
         from torchvision.datasets import CIFAR10
 
+        fs = self.filesystem or get_global_filesystem()
         for split in ("train", "test"):
-            fs = self.filesystem or get_global_filesystem()
-
             status_path = str(self.output_dir / f"{split}.status")
             if fs.get_file_info(status_path).type is not FileType.NotFound:
                 continue
@@ -53,7 +52,11 @@ class CIFAR10Prepare(Prepare):
             ds = ray.data.from_pandas(df)
 
             ds = ds.repartition(8, shuffle=False)
-            ds.write_parquet(data_path, compression="snappy")
+            ds.write_parquet(
+                data_path,
+                filesystem=fs,
+                compression="zstd",
+            )
 
             with fs.open_output_stream(status_path) as stream:
                 stream.write(b"ok")

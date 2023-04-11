@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Dict, Tuple, List, Optional, Union
+from typing import Any, Dict, Tuple, List, Optional
 
 import numpy as np
 import ray.data
@@ -8,6 +8,7 @@ from ray.data.datasource import DefaultParquetMetadataProvider, ParquetMetadataP
 from hydra.core.config_store import ConfigStore
 
 from x2r.configs import DatasetConfig
+from x2r.io import get_global_filesystem
 from .dataset import Dataset
 
 
@@ -47,7 +48,10 @@ class ParquetDataset(Dataset):
             paths = []
 
         if path is not None:
-            paths = [path] + paths
+            paths = [path] + list(paths)
+
+        if filesystem is None:
+            filesystem = get_global_filesystem()
 
         if arrow_parquet_args is None:
             arrow_parquet_args = {}
@@ -55,7 +59,7 @@ class ParquetDataset(Dataset):
         dataset = ray.data.read_parquet(
             paths,
             filesystem=filesystem,
-            columns=columns,
+            columns=list(columns),
             parallelism=parallelism,
             ray_remote_args=ray_remote_args,
             tensor_column_schema=tensor_column_schema,

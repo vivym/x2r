@@ -51,7 +51,11 @@ def parse_datasets(
 def main(cfg: DictConfig):
     cfg: Config = OmegaConf.to_object(cfg)
 
-    set_global_filesystem(cfg.filesystem)
+    if cfg.filesystem is not None:
+        filesystem = instantiate(cfg.filesystem)
+    else:
+        filesystem = None
+    set_global_filesystem(filesystem)
 
     if cfg.task == TaskType.TRAIN:
         preprocessor, train_dataset, val_dataset, test_dataset = parse_datasets(cfg.datasets)
