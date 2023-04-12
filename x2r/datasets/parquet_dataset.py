@@ -53,13 +53,16 @@ class ParquetDataset(Dataset):
         if filesystem is None:
             filesystem = get_global_filesystem()
 
+        if columns is not None:
+            columns = list(columns)
+
         if arrow_parquet_args is None:
             arrow_parquet_args = {}
 
         dataset = ray.data.read_parquet(
             paths,
             filesystem=filesystem,
-            columns=list(columns),
+            columns=columns,
             parallelism=parallelism,
             ray_remote_args=ray_remote_args,
             tensor_column_schema=tensor_column_schema,

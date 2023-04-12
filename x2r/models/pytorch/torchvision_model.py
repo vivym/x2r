@@ -8,6 +8,7 @@ from hydra.core.config_store import ConfigStore
 from torchvision.models import get_model, get_model_weights, resnet50
 
 from x2r.configs import ModelConfig
+from .torch_model import TorchModel
 
 
 @dataclass(kw_only=True)
@@ -23,7 +24,7 @@ cs = ConfigStore.instance()
 cs.store(group="model", name="TorchvisionModel", node=TorchvisionModelConfig)
 
 
-class TorchvisionModel(nn.Module):
+class TorchvisionModel(TorchModel):
     def __init__(
         self,
         model_name: str,
@@ -45,7 +46,7 @@ class TorchvisionModel(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.model(x)
 
-    def training_step(self, batch, batch_idx: int):
+    def training_step(self, batch):
         images, labels = batch["image"], batch["label"]
         images = images.permute(0, 3, 1, 2)
 
@@ -53,5 +54,5 @@ class TorchvisionModel(nn.Module):
 
         return F.cross_entropy(logits, labels)
 
-    def validation_step(self, batch, batch_idx: int):
+    def validation_step(self, batch):
         ...
