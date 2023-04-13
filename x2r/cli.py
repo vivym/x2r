@@ -88,3 +88,5 @@ def main(cfg: DictConfig):
 
         trainer = instantiate(cfg.trainer, **overrides)
         trainer.fit()
+
+        # TODO: print best result

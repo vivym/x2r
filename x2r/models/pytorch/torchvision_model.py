@@ -5,10 +5,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from hydra.core.config_store import ConfigStore
-from torchvision.models import get_model, get_model_weights, resnet50
+from torchvision.models import get_model, get_model_weights
+from torchmetrics import MeanMetric
+from torchmetrics.classification import MulticlassAccuracy
 
 from x2r.configs import ModelConfig
-from .torch_model import TorchModel
+from .torch_model import TorchModel, MetricConfig
 
 
 @dataclass(kw_only=True)
@@ -43,8 +45,25 @@ class TorchvisionModel(TorchModel):
 
         self.model = get_model(model_name, weights=weights, **extra_kwargs)
 
+        self.train_loss_metric = MeanMetric()
+        self.train_acc_metric = MulticlassAccuracy()
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.model(x)
+
+    def get_training_metrics(self):
+        return {
+            "loss": MetricConfig(
+                metric_fn=self.train_loss_metric,
+                on_epoch=True,
+                on_step=True,
+            ),
+            "acc": MetricConfig(
+                metric_fn=self.train_acc_metric,
+                on_epoch=True,
+                on_step=True,
+            ),
+        }
 
     def training_step(self, batch):
         images, labels = batch["image"], batch["label"]
@@ -52,7 +71,15 @@ class TorchvisionModel(TorchModel):
 
         logits = self(images)
 
-        return F.cross_entropy(logits, labels)
+        loss = F.cross_entropy(logits, labels)
+
+        self.train_loss_metric.update(loss)
+        self.train_acc_metric.update(logits, labels)
+
+        return loss
+
+    def get_validation_metrics(self):
+        ...
 
     def validation_step(self, batch):
         ...

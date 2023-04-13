@@ -1,13 +1,14 @@
 import os
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, List, Tuple
 
-import torch.nn as nn
 from ray.air.config import (
+    CheckpointConfig as CheckpointStrategy,
     DatasetConfig as DatasetConfigBase,
-    RunConfig as RunConfigBase,
+    FailureConfig,
 )
+from ray.tune import SyncConfig
 from ray.train.torch.config import TorchConfig as TorchConfigBase
 from hydra.core.config_store import ConfigStore
 
@@ -37,8 +38,36 @@ class DatasetConfig(DatasetConfigBase):
 
 
 @dataclass(kw_only=True)
-class RunConfig(RunConfigBase):
+class CLIReporterConfig:
+    _target_: str = "ray.tune.CLIReporter"
+
+    metric_columns: Optional[List[str]] = None
+    parameter_columns: Optional[List[str]] = None
+    total_samples: Optional[int] = None
+    max_progress_rows: int = 20
+    max_error_rows: int = 20
+    max_column_length: int = 20
+    max_report_frequency: int = 5
+    infer_limit: int = 3
+    print_intermediate_tables: Optional[bool] = None
+    metric: Optional[str] = None
+    mode: Optional[str] = None
+    sort_by_metric: bool = False
+
+
+@dataclass(kw_only=True)
+class RunConfig:
     _target_: str = "ray.air.config.RunConfig"
+
+    name: Optional[str] = None
+    local_dir: Optional[str] = None
+    callbacks: Optional[List[Dict[str, Any]]] = None
+    failure_config: Optional[FailureConfig] = None
+    sync_config: Optional[SyncConfig] = None
+    checkpoint_config: Optional[CheckpointStrategy] = None
+    progress_reporter: Optional[CLIReporterConfig] = None
+    verbose: int = 3
+    log_to_file: Optional[bool] = False
 
 
 @dataclass(kw_only=True)
@@ -72,12 +101,14 @@ class TrainLoopConfig:
     max_steps: Optional[int] = None
     val_every_n_epochs: int = 1
     val_every_n_steps: Optional[int] = None
-    lr_scheduler_on_step: bool = False
+    lr_scheduler_on_step: bool = True
     precision: Precision = Precision.f32
     clip_grad_type: Optional[ClipGradType] = None
     clip_grad_value: Optional[float] = None
     clip_grad_norm_type: float = 2.0
     accumulate_grad_batches: int = 1
+    checkpoint_every_n_epochs: int = 1
+    checkpoint_every_n_steps: Optional[int] = None
 
     def __post_init__(self):
         if self.batch_size is None and self.train_batch_size is None:
