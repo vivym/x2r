@@ -7,10 +7,6 @@ from torchmetrics import Metric as BaseMetric
 
 
 class Metric(nn.Module):
-    metric_fn: BaseMetric
-    on_step: bool = True
-    on_epoch: bool = True
-
     def __init__(
         self,
         metric_fn: BaseMetric,
@@ -23,32 +19,25 @@ class Metric(nn.Module):
         self.on_step = on_step
         self.on_epoch = on_epoch
 
-        if self.on_step:
-            self._metric_fn_step = self.metric_fn.clone()
-
-        if self.on_epoch:
-            self._metric_fn_epoch = self.metric_fn.clone()
+        self._last_step_value = None
 
     def update(self, *args, **kwargs):
-        if self.on_step:
-            self._metric_fn_step.update(*args, **kwargs)
+        self._last_step_value = self.metric_fn(*args, **kwargs).item()
 
-        if self.on_epoch:
-            self._metric_fn_epoch.update(*args, **kwargs)
-
-    def get_step_metric(self) -> Optional[torch.Tensor]:
+    def get_step_metric(self) -> Optional[float]:
         if self.on_step:
-            val = self._metric_fn_step.compute()
-            self._metric_fn_step.reset()
-            return val
+            assert self._last_step_value is not None
+            return self._last_step_value
         else:
             return None
 
-    def get_epoch_metric(self) -> Optional[torch.Tensor]:
+    def get_epoch_metric(self) -> Optional[float]:
         if self.on_epoch:
-            val = self._metric_fn_epoch.compute()
-            self._metric_fn_epoch.reset()
+            val = self.metric_fn.compute().item()
+            self.metric_fn.reset()
             return val
+        else:
+            return None
 
 
 class TorchModel(nn.Module):

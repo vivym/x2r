@@ -334,7 +334,7 @@ class TrainingLoop:
         model = self.model
         model.eval()
 
-        for i, batch in enumerate(val_dataset_iter):
+        for batch in val_dataset_iter:
             with autocast(**self.autocast_params):
                 model.validation_step(batch)
 
@@ -382,7 +382,7 @@ class TrainingLoop:
                 val = metric.get_epoch_metric()
 
             if val is not None:
-                self._metrics_to_report[f"{stage}/{name}_{'step' if on_step else 'epoch'}"] = val.item()
+                self._metrics_to_report[f"{stage}/{name}_{'step' if on_step else 'epoch'}"] = val
 
     def _apply_gradient_clippping(self):
         model, optimizer = self.model, self.optimizer
