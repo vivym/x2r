@@ -24,12 +24,6 @@ class PrepareConfig:
     filesystem: Optional[FileSystemConfig] = None
 
 
-# TODO:
-@dataclass(kw_only=True)
-class PreprocessorConfig:
-    _target_: str
-
-
 @dataclass(kw_only=True)
 class DatasetConfig:
     _target_: str

@@ -17,7 +17,7 @@ class TorchTrainer(TorchTrainerBase):
         self,
         model_factory: Callable[[], nn.Module],
         optimizer_factory: Callable[[nn.Module], torch.optim.Optimizer],
-        lr_scheduler_factory: Callable[[torch.optim.Optimizer], torch.optim.lr_scheduler._LRScheduler],
+        lr_scheduler_factory: Callable[[torch.optim.Optimizer], torch.optim.lr_scheduler.LRScheduler],
         train_loop_per_worker: Union[Callable[[], None], Callable[[Dict], None]],
         *,
         train_loop_config: Optional[Dict] = None,

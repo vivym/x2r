@@ -1,5 +1,6 @@
 import json
 import tempfile
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict
@@ -56,8 +57,12 @@ cs.store(group="datasets/prepare", name="ShapeNetCoreV2PC15k", node=ShapeNetCore
 
 class ShapeNetCoreV2PC15kPrepare(Prepare):
     def run(self) -> None:
-        # TODO: support temporary cache dir
         splits = ["train", "val", "test"]
+
+        if self.cache_dir is not None:
+            cache_dir = self.cache_dir
+        else:
+            cache_dir = Path(tempfile.mkdtemp())
 
         fs = self.filesystem or get_global_filesystem()
 
@@ -69,7 +74,7 @@ class ShapeNetCoreV2PC15kPrepare(Prepare):
         ).type is FileType.NotFound:
             gdown.cached_download(
                 "https://drive.google.com/u/0/uc?id=1s2NA1unoLScx0GYcZfQ7ot3XkwoH_0l6",
-                str(self.cache_dir / "ShapeNetCore.v2.PC15k.zip"),
+                str(cache_dir / "ShapeNetCore.v2.PC15k.zip"),
                 quiet=False,
                 md5="22660aab28f604a62ca6c4d23811200e",
                 postprocess=gdown.extractall,
@@ -77,7 +82,7 @@ class ShapeNetCoreV2PC15kPrepare(Prepare):
             pc_infos = {split: [] for split in splits}
             stats_infos = {synset_id: [] for synset_id in synset_id_to_category.keys()}
 
-            for synset_id_path in track(list((self.cache_dir / "ShapeNetCore.v2.PC15k").glob("*"))):
+            for synset_id_path in track(list((cache_dir / "ShapeNetCore.v2.PC15k").glob("*"))):
                 synset_id = synset_id_path.name
                 if not synset_id_path.is_dir() or synset_id not in synset_id_to_category:
                     continue
@@ -95,7 +100,7 @@ class ShapeNetCoreV2PC15kPrepare(Prepare):
                             "category": category,
                             "category_id": category_to_category_id[category],
                             "synset_id": synset_id,
-                            "pc_path": str(pc_path.relative_to(self.cache_dir)),
+                            "pc_path": str(pc_path.relative_to(cache_dir)),
                         })
 
                 pcs = np.concatenate(pcs, axis=0)
@@ -131,7 +136,7 @@ class ShapeNetCoreV2PC15kPrepare(Prepare):
             pc_std = np.asarray(pc_std, dtype=np.float32)
             pc_std_all = np.asarray(pc_std_all, dtype=np.float32)
 
-            pc_path = self.cache_dir / data["pc_path"]
+            pc_path = cache_dir / data["pc_path"]
             pc = np.load(pc_path).astype(np.float32)
             return dict(**data, pc=pc, pc_mean=pc_mean, pc_std=pc_std, pc_std_all=pc_std_all)
 
@@ -155,3 +160,6 @@ class ShapeNetCoreV2PC15kPrepare(Prepare):
 
             with fs.open_output_stream(status_path) as stream:
                 stream.write(b"ok")
+
+        if self.cache_dir is None:
+            shutil.rmtree(cache_dir)

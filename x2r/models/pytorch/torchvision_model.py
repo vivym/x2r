@@ -10,7 +10,7 @@ from torchmetrics import MeanMetric
 from torchmetrics.classification import MulticlassAccuracy
 
 from x2r.configs import ModelConfig
-from .torch_model import TorchModel, MetricConfig
+from .torch_model import TorchModel, Metric
 
 
 @dataclass(kw_only=True)
@@ -19,7 +19,7 @@ class TorchvisionModelConfig(ModelConfig):
 
     model_name: str
     pretrained: bool = True
-    extra_kwargs: Optional[Dict[str, Any]] = None
+    num_classes: int = 1000
 
 
 cs = ConfigStore.instance()
@@ -31,7 +31,7 @@ class TorchvisionModel(TorchModel):
         self,
         model_name: str,
         pretrained: bool = True,
-        extra_kwargs: Optional[Dict[str, Any]] = None
+        num_classes: int = 1000,
     ):
         super().__init__()
 
@@ -40,29 +40,36 @@ class TorchvisionModel(TorchModel):
         else:
             weights = None
 
-        if extra_kwargs is None:
-            extra_kwargs = {}
+        self.model = get_model(model_name, weights=weights, num_classes=num_classes)
 
-        self.model = get_model(model_name, weights=weights, **extra_kwargs)
-
-        self.train_loss_metric = MeanMetric()
-        self.train_acc_metric = MulticlassAccuracy()
+        self.train_loss_metric = Metric(
+            MeanMetric(),
+            on_step=True,
+            on_epoch=True,
+        )
+        self.train_acc_metric = Metric(
+            MulticlassAccuracy(num_classes=num_classes),
+            on_step=True,
+            on_epoch=True,
+        )
+        self.val_loss_metric = Metric(
+            MeanMetric(),
+            on_step=True,
+            on_epoch=True,
+        )
+        self.val_acc_metric = Metric(
+            MulticlassAccuracy(num_classes=num_classes),
+            on_step=True,
+            on_epoch=True,
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.model(x)
 
-    def get_training_metrics(self):
+    def get_training_metrics(self) -> Optional[Dict[str, Metric]]:
         return {
-            "loss": MetricConfig(
-                metric_fn=self.train_loss_metric,
-                on_epoch=True,
-                on_step=True,
-            ),
-            "acc": MetricConfig(
-                metric_fn=self.train_acc_metric,
-                on_epoch=True,
-                on_step=True,
-            ),
+            "loss": self.train_loss_metric,
+            "acc": self.train_acc_metric,
         }
 
     def training_step(self, batch):
@@ -78,8 +85,19 @@ class TorchvisionModel(TorchModel):
 
         return loss
 
-    def get_validation_metrics(self):
-        ...
+    def get_validation_metrics(self) -> Optional[Dict[str, Metric]]:
+        return {
+            "loss": self.val_loss_metric,
+            "acc": self.val_acc_metric,
+        }
 
     def validation_step(self, batch):
-        ...
+        images, labels = batch["image"], batch["label"]
+        images = images.permute(0, 3, 1, 2)
+
+        logits = self(images)
+
+        loss = F.cross_entropy(logits, labels)
+
+        self.val_loss_metric.update(loss)
+        self.val_acc_metric.update(logits, labels)

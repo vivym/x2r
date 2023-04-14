@@ -12,7 +12,7 @@ class Prepare:
         filesystem: Optional[FileSystemConfig] = None,
     ) -> None:
         self.output_dir = Path(output_dir)
-        self.cache_dir = Path(cache_dir)
+        self.cache_dir = Path(cache_dir) if cache_dir is not None else None
         self.filesystem = filesystem
 
     def run(self) -> None:

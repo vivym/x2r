@@ -1,2 +1,2 @@
-from .torch_model import TorchModel, MetricConfig
+from .torch_model import TorchModel, Metric
 from .torchvision_model import TorchvisionModelConfig, TorchvisionModel

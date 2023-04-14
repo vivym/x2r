@@ -4,7 +4,6 @@ from enum import Enum
 from typing import Any, Dict, Optional, Union, List, Tuple
 
 from ray.air.config import (
-    CheckpointConfig as CheckpointStrategy,
     DatasetConfig as DatasetConfigBase,
     FailureConfig,
 )
@@ -35,6 +34,15 @@ class ScalingConfig:
 @dataclass(kw_only=True)
 class DatasetConfig(DatasetConfigBase):
     _target_: str = "ray.air.config.DatasetConfig"
+
+
+@dataclass(kw_only=True)
+class CheckpointStrategy:
+    _target_: str = "ray.air.config.CheckpointConfig"
+
+    num_to_keep: Optional[int] = None
+    checkpoint_score_attribute: Optional[str] = None
+    checkpoint_score_order: str = "max"
 
 
 @dataclass(kw_only=True)
@@ -74,7 +82,7 @@ class RunConfig:
 class CheckpointConfig:
     _target_: str = "ray.air.checkpoint.Checkpoint"
 
-    local_path: Optional[Union[str, os.PathLike]] = None
+    local_path: Optional[str] = None
     uri: Optional[str] = None
 
 
