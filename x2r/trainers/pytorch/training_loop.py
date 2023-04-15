@@ -60,6 +60,7 @@ def default_training_loop_per_worker(
     accumulate_grad_batches: int,
     checkpoint_every_n_epochs: int,
     checkpoint_every_n_steps: Optional[int],
+    local_shuffle_buffer_size: Optional[int],
 ):
     device = get_device()
 
@@ -104,6 +105,7 @@ def default_training_loop_per_worker(
         accumulate_grad_batches=accumulate_grad_batches,
         checkpoint_every_n_epochs=checkpoint_every_n_epochs,
         checkpoint_every_n_steps=checkpoint_every_n_steps,
+        local_shuffle_buffer_size=local_shuffle_buffer_size,
         train_metrics=model.get_training_metrics(),
         val_metrics=model.get_validation_metrics(),
         current_epoch=0,
@@ -154,6 +156,8 @@ class TrainingLoop:
 
     checkpoint_every_n_epochs: int
     checkpoint_every_n_steps: Optional[int]
+
+    local_shuffle_buffer_size: Optional[int]
 
     train_metrics: Optional[Dict[str, Metric]]
     val_metrics: Optional[Dict[str, Metric]]
@@ -253,7 +257,10 @@ class TrainingLoop:
     def run(self):
         while not self.done:
             train_dataset_iter = self.train_dataset_shard.iter_torch_batches(
-                batch_size=self.train_batch_size, device=self.device
+                prefetch_blocks=1,
+                batch_size=self.train_batch_size,
+                device=self.device,
+                local_shuffle_buffer_size=self.local_shuffle_buffer_size,
             )
             train_dataset_iter = HasNextIterator(train_dataset_iter)
             self._num_steps_per_epoch = 0
@@ -328,7 +335,7 @@ class TrainingLoop:
     @torch.no_grad()
     def val_one_epoch(self):
         val_dataset_iter = self.val_dataset_shard.iter_torch_batches(
-            batch_size=self.val_batch_size, device=self.device
+            prefetch_blocks=1, batch_size=self.val_batch_size, device=self.device
         )
 
         model = self.model

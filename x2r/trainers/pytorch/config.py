@@ -3,10 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, Optional, Union, List, Tuple
 
-from ray.air.config import (
-    DatasetConfig as DatasetConfigBase,
-    FailureConfig,
-)
+from ray.air.config import FailureConfig
 from ray.tune import SyncConfig
 from ray.train.torch.config import TorchConfig as TorchConfigBase
 from hydra.core.config_store import ConfigStore
@@ -32,8 +29,17 @@ class ScalingConfig:
 
 
 @dataclass(kw_only=True)
-class DatasetConfig(DatasetConfigBase):
+class DatasetConfig:
     _target_: str = "ray.air.config.DatasetConfig"
+
+    fit: Optional[bool] = None
+    split: Optional[bool] = None
+    required: Optional[bool] = None
+    transform: Optional[bool] = None
+    max_object_store_memory_fraction: Optional[float] = None
+    global_shuffle: Optional[bool] = None
+    randomize_block_order: Optional[bool] = None
+    per_epoch_preprocessor: Optional[Dict[str, Any]] = None
 
 
 @dataclass(kw_only=True)
@@ -117,6 +123,7 @@ class TrainLoopConfig:
     accumulate_grad_batches: int = 1
     checkpoint_every_n_epochs: int = 1
     checkpoint_every_n_steps: Optional[int] = None
+    local_shuffle_buffer_size: Optional[int] = None
 
     def __post_init__(self):
         if self.batch_size is None and self.train_batch_size is None:
