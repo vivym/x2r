@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 from hydra.core.config_store import ConfigStore
 

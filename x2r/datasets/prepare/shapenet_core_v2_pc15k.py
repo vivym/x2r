@@ -7,9 +7,7 @@ from typing import Any, Dict
 
 import gdown
 import numpy as np
-import pandas as pd
 import ray.data
-from ray.data.extensions import TensorDtype
 from rich.progress import track
 from pyarrow.fs import FileType
 from hydra.core.config_store import ConfigStore

@@ -1,8 +1,7 @@
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from hydra.core.config_store import ConfigStore
 from torchvision.models import get_model, get_model_weights

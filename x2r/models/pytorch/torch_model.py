@@ -1,7 +1,5 @@
-from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-import torch
 import torch.nn as nn
 from torchmetrics import Metric as BaseMetric
 

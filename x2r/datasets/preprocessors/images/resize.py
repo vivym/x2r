@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Dict, Optional, Union, Literal, List, Tuple
+from typing import Dict, Union, List, Tuple
 
 import cv2
 import numpy as np
