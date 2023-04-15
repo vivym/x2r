@@ -86,6 +86,20 @@ def main(cfg: DictConfig):
         if test_dataset is not None:
             overrides["datasets"]["test"] = test_dataset
 
+        from ray.air.util.check_ingest import DummyTrainer
+
+        # Setup the dummy trainer that prints ingest stats.
+        # Run and print ingest stats.
+        trainer = DummyTrainer(
+            scaling_config=ScalingConfig(num_workers=1, use_gpu=False),
+            datasets={"train": dataset},
+            preprocessor=preprocessor,
+            num_epochs=1,  # Stop after this number of epochs is read.
+            prefetch_blocks=1,  # Number of blocks to prefetch when reading data.
+            batch_size=None,  # Use whole blocks as batches.
+        )
+        trainer.fit()
+
         trainer = instantiate(cfg.trainer, **overrides)
         trainer.fit()
 
